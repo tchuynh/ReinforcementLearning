@@ -1,0 +1,187 @@
+---
+title: "Reinforcement Learning"
+output: html_document
+date: "2024-03-26"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Model-based RL
+For a probabilistic markov decision process. dynamic programming & bellman optimality. 
+
+- policy iteration
+- value iteration
+
+
+Nonlinear Dynamics. 
+optimal control & HJB, hamilton-jacobian-bellman
+
+Actually solving these practically involve brute force and do not scale. possible for 3-5 dimensions.  
+
+Agent takes actions $a_i$ in environment states $s_t$. We are trying to learn policy and value function. 
+
+$$
+\pi(s,a) = Pr(a = a | s = s)
+$$
+
+$$
+V_{\pi}(s) = E (\sum \gamma ^t r_t | s_0 = s)
+$$
+We assumed we have a model for how the environment works. We have a model for the rewards. Its an assumption that I know what the rules of the game are. 
+
+R(s',s,a) = Pr(r_{k+1} = s', s_k = s, a_k = a)
+P(s', s,a) = Pr(s_{k+1} = s' | s_k = s, )  
+
+The number of states is so large. 10^(80-180). We dont actually know what that number is. We cant calculate value function over all posssible states which is not feasible. Whats the optimal move for 3 or 4 or 5 steps ahead, thats what dynamic programming tries to do. 
+
+**Value function**  
+If I know what the value function is at the next state and I know what the best next state is, then all I have to do is take the action that gets me to the next best state.  Recursive expression that lets you break the problem up into subproblems.  Bellmans equation. optimize locally. optimize this subproblem, plug it into the larger problem and so on and you have an optimal solution. if all subproblems are solved optimally, and they are recursive, then the problem has been optimally solved.  
+
+**Dyamic Programming**  
+Richard bellman: how to solve multi-step optimization problems by breaking into smaller recursive sub-problems. 
+
+**top down**
+List out all possible sub-problems and solve each one of them. For each sub-problem, check if you have solved it before, if not solve it, if you have it, use the solution. so you end up with a table of subproblems and solutions. 
+
+**Bottom up**
+look at every winning board. you take a step back, what got me to that outcome. then two steps back, what two step chain got me to that board.
+
+**Divide and conquer**  
+specifically revolve around non-recursive and non-overlapping.  
+
+**Value Iteration**
+optimize a sequence of events through a value function.  mazimize over all actions to maximize expected value of total rewards. 
+
+Big table of value and all states.  I can evaluate this function because I have P(\*) and I have R(\*). Update V(s) with this maximum expected future reward. take next step, into a new state s', then I do it again, I choose the action that maximize this function. 
+
+The value function gets better and better. You have to know the P() and the next state given that P. The expected s' given P.
+
+Play a game, play and play, and update. for small problems like tic tac toe its possible. cant do this for chest because there are so many states, even an unknown number of possible states. run through this value iteration until convergence, then extract the beest possible policy given this value function.
+
+**Policy Iteration**
+similar to value iteration. two step process. 
+alternatve between policy and value function. 
+typically converges in fewer iterations than value iteration. 
+
+$$
+V_\pi(s) = \mathop{\mathbb{E}}(R(s', s, \pi(s)) + \gamma V_\pi(s'))  \\
+= \sum_{s'} P(s' | s, \pi(s))(R(s',s,\pi(s)) +\gamma V_\pi(s')) \\
+\pi(s) = argmax_a \mathop{\mathbb{E}} (R(s',s,a) + \gamma V_pi(s'))
+$$
+
+# TODO
+write tic-tac-toe for policy iteration and value iteration and compare convergence rates. 
+
+
+
+
+
+**Quality Function**
+The quality function is the expected current and future rewards given a state s and action a. Model free control. Q encapsulates policy and value functions without needing a model.  
+
+Quality function now is the expected value of my current rewards plus the discounted value of all my future rewards for being in the next state that I'm going to jump to.  
+
+The environment evolves probabilistically, even if I take the same action at the same state, I may have different future states for the same action and current state.  Given by some probability function P. This expected value has to be summed up over all the possible s', future states I may find myself in with probability given by function P.  
+
+Up until now, policy iteration and value iteration assumes you have this model of the world P.  and a model for this rewar function R. When you have these two functions, you can optimize your action or policy and the value function.  
+
+Many systems, we dont have a function for P or R.  
+
+$\begin{aligned}
+Q(s,a) &= \text{quality of state/action pair} \\
+Q(s,a) &= \mathop{\mathbb{E}}(R(s',s,a) + \gamma V(s')) \\
+&= \sum_s' P(s' |s,a)(R(s',s,a) + \gamma V(s')) \\
+V(s) = max _a Q(s,a)  \\
+\pi(s,a) = argmax_a Q(s,a)
+\end{aligned}$
+
+
+
+deep quality metrics:  
+
+- atari
+- deepmind
+- alphago
+
+multistep 
+
+
+**Monte carlo learning**  
+
+Episodic learning. for processes like games has to end, or building a robot that runs a race, the race is one episode, the game is one episode.  Take this total discounted reward over episode (one game), difference it with the old value function, divided by the number of steps, add this average difference in value to the old value function for each state visited. My new value function of every single state along the way plus the monte carlo target.  any states visited along the way to the finish line, add the average cumulative reward difference.  This is very inefficient because it says every single step you took to the finish line is equally as important.  If i played a brilliant game of chess and then at the end I made a bad move and lost all of those moves would be considered equal contributions to the outcome. Conversely, if I played a bad game of chess and my opponent got unlucky and lost, i would weight all of those bad moves towards this updated value function.  
+
+It has no bias but very inefficient. No bias, high variance. the eternal struggle.  
+
+$\begin{aligned}
+R_\sum= \sum^n_{k=1} \gamma^kr_k , \; \text{Total reward over episode} \\
+v^{new} (s_k) = v^{old}(s_k) + \frac{1}{n} (R_\sum - v^{old}(s_k)) \; \forall k \in [1,...,n]\\
+Q^{new} (s_k) = Q^{old}(s_k) + \frac{1}{n} (R_\sum - Q^{old}(s_k)) \; \forall k \in [1,...,n]\\
+\end{aligned}$
+
+
+**Temporal Difference Learning: TD(0)**  
+It highlights events that are more recently giving me rewards.  state-action sequence and rewards along the way, maybe events that happened recently are more important to the reward I'm receiving.  
+
+There is an optimal time in the past that is related to the reward Im receiving.  
+
+expected value at being at point $s_k$  
+starts with old value function plus a correction term, instead of average over the entire trajectory.  
+TD target estimate $R_\sum$  is almost the value function $V(s_k)$. I take its difference to the old estimate of my value function at $s_k$.  
+$V^{old}(s_k)$: old estimate of my value function at $s_k$  
+$r_k + \gamma V^{old} (s_}k+1})$: new information of what actually happened.   At time k, I perform an action and get reward $r_k$ or lose a reward $r_k$ whatever, I mvoe to the next state $s_{k+1}$ and I can calculate the cumulative rewards $R_\sum$. This is the ACTUAL reward of taking some action a at state s, if there is a difference between the predicted value, my old value estimate of $s_k$, I take the difference between the actual and predicted, and update my old value estimate with a weight $\alpha$.  
+
+There are analogs of this in neuroscience, cells that fire together wire together. when dopamine is released, it strengthens cells that fire together. the cells that fire together right before dopamine was released.  processes in your brain are always estimating this cumulative future reward, when the actual reward is different, you adjust your behavior, you update your value function.    
+
+because of the bellman optimality condition. 
+
+Value function at state now at time k equals my expected reward at time k plus my discounted reward at 
+
+$\begin{aligned}
+V(s_k) = \mathop{\mathbb{E}}(r_k + \gamma V(s_{k+1}))\\
+v^{new} (s_k) = v^{old}(s_k) + \alpha (r_k + \gamma V^{old}(s_{k+1} - V^{old} (s_k)))
+\end{aligned}$
+
+
+**Temporal Difference Learning: TD(N)**  
+$\begin{aligned}
+V(s_k) = \mathop{\mathbb{E}}(r_k + \gamma V(s_{k+1})) \Rightarrow 
+V(s_k) = \mathop{\mathbb{E}}(r_k + r_{k+1} + \gamma^2 V(s_{k+2}))
+\\
+v^{new} (s_k) = v^{old}(s_k) + \alpha (r_k + \gamma V^{old}(s_{k+1} - V^{old} (s_k)))
+\end{aligned}$
+
+
+### Model-free RL.  
+
+#### Gradient Free
+Do not have a model, like in chess, I do not have a model of my oppononents decisions which is a part of the environment.  you dont know their policy. SARSA methods are more conservative but Q-learning converges faster.  
+
+##### Off policy
+- Q-learning: Q(s,a)
+Good for imitation learning. 
+
+##### On policy
+Always play the optimal choice. 
+
+- SARSA. 
+- TD(0). 
+- TD-$\lambda$. 
+
+#### Gradient Based
+This is probably the fastest, but we usually dont have a gradient or even a function, we are just playing games. making decisions and receiving rewards. Newtons step and steapest descent.  
+
+$$
+\theta^{new} = \theta^{old} + \alpha \Delta_\theta R_{\sum \theta}
+$$
+
+##### Deep Policy Network  
+
+
+### Deep RL
+
+
+
+
+
